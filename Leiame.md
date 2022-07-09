@@ -72,4 +72,4 @@ Crie o seu arquivo PULL_REQUEST.md, onde você vai descrever o que e como fez, o
 
 Criar uma nova _pull request_ usando o mesmo nome de _branch_ para o _Backend_ e _Frontend_.
 
-Envie-nos os _pull requests_ e é isso!
+Envie-nos os _pull requests_ e é isso

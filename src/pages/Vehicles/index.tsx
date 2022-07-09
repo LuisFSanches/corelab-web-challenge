@@ -1,39 +1,147 @@
-import { useEffect, useState } from "react";
-import { getVehicles } from "../../lib/api";
-import { Button, Card, Search } from "../../components";
-import styles from "./Vehicles.module.scss";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useContext, useState } from "react";
+import { Link } from "react-router-dom";
+
+import Filter from "../../assets/images/filter.png";
+import { Card } from "../../components/Card";
+import { FilterModal } from "../../components/FilterModal";
+import SearchBar from "../../components/SearchBar";
+import { VehicleModal } from "../../components/VehicleModal";
+import { AuthContext } from "../../contexts/AuthContext";
+import { VehicleContext } from "../../contexts/VehicleContext";
 import { IVehicle } from "../../types/Vehicle";
+import {
+  AddButton,
+  AllVehiclesContainer,
+  Container,
+  FavoritesContainer,
+  HeaderContainer,
+  SearchContainer,
+} from "./style";
 
-const VehiclesPage = () => {
-  const [vehicles, setVehicles] = useState<IVehicle[]>([]);
-  const [search, setSearch] = useState<string>("");
+export function VehiclesPage() {
+  const { favoriteVehicles, filteredVehicles } = useContext(VehicleContext);
+  const { isAuthenticated, userData } = useContext(AuthContext);
 
-  useEffect(() => {
-    const fetchVehicles = async () => {
-      const payload = await getVehicles();
-      setVehicles(payload);
-    };
+  const [isVehicleModalOpen, setVehicleModalOpen] = useState(false);
+  const [isFilterModalOpen, setFilterModalOpen] = useState(false);
 
-    fetchVehicles();
-  }, []);
+  const [queryVehicle, setQueryVehicle] = useState("");
+  const keys = [
+    "name",
+    "brand",
+    "price",
+    "color",
+    "plate",
+    "productionYear",
+    "description",
+  ];
 
-  console.log({ vehicles });
+  // -----Open and close vehicle modal
+  const handleOpenVehicleModal = () => {
+    setVehicleModalOpen(true);
+  };
+
+  const handleCloseVehicleModal = () => {
+    setVehicleModalOpen(false);
+  };
+
+  // -----Open and close filter modal
+  const handleOpenFilterModal = () => {
+    setFilterModalOpen(true);
+  };
+
+  const handleCloseFilterModal = () => {
+    setFilterModalOpen(false);
+  };
+
+  // -----Filter vehicles
+  const searchVehicles = () => {
+    if (queryVehicle !== "") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return filteredVehicles.filter((vehicle: any) =>
+        keys.some((key) =>
+          vehicle[key]?.toString().toLowerCase().includes(queryVehicle)
+        )
+      );
+    }
+    return filteredVehicles;
+  };
+
+  // ------Check to see if user is logged
+  const handleAddButton = () => {
+    if (isAuthenticated) {
+      return (
+        <AddButton onClick={handleOpenVehicleModal}>
+          <FontAwesomeIcon icon={faPlus} /> ADICIONAR
+        </AddButton>
+      );
+    }
+    return (
+      <AddButton>
+        <Link to="/login">
+          <FontAwesomeIcon icon={faPlus} /> ADICIONAR
+        </Link>
+      </AddButton>
+    );
+  };
+
+  const checkIfUserHasFavorites = () => {
+    if (favoriteVehicles.length > 0) {
+      return (
+        <FavoritesContainer>
+          {favoriteVehicles.map((vehicle: IVehicle) => (
+            <Card
+              key={vehicle._id}
+              vehicle={vehicle}
+              isAuthenticated={isAuthenticated}
+              userData={userData}
+            />
+          ))}
+        </FavoritesContainer>
+      );
+    }
+    return <></>;
+  };
 
   return (
-    <div className={styles.Vehicles}>
-      <main className={styles.main}>
-        <Search placeholder="Search" value={search} onChange={() => {}} />
+    <Container>
+      <HeaderContainer>
+        <SearchContainer>
+          <SearchBar setValue={setQueryVehicle} />
+          <button onClick={handleOpenFilterModal}>
+            <img src={Filter} alt="" />
+          </button>
+        </SearchContainer>
 
-        <Button text="Add new vehicle" onClick={() => {}} />
+        {handleAddButton()}
+      </HeaderContainer>
 
-        <Card title="Sandero Stepway">
-          <p>Price: 22000</p>
-          <p>Description: Carro usado por 2 anos...</p>
-          <p>Year: 2018</p>
-        </Card>
-      </main>
-    </div>
+      <h2>Favoritos</h2>
+      {checkIfUserHasFavorites()}
+      <h2>Anúncios</h2>
+      <AllVehiclesContainer thereIsFavorite={favoriteVehicles.length > 0}>
+        {searchVehicles().map((vehicle: IVehicle) => (
+          <Card
+            key={vehicle._id}
+            vehicle={vehicle}
+            isAuthenticated={isAuthenticated}
+            userData={userData}
+          />
+        ))}
+      </AllVehiclesContainer>
+
+      <VehicleModal
+        isOpen={isVehicleModalOpen}
+        onRequestClose={handleCloseVehicleModal}
+        vehicle={undefined}
+        toUpdateVehicle={false}
+      />
+      <FilterModal
+        isOpen={isFilterModalOpen}
+        onRequestClose={handleCloseFilterModal}
+      />
+    </Container>
   );
-};
-
-export default VehiclesPage;
+}
